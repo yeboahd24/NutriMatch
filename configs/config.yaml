@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 120s
+  shutdown_timeout: 30s
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: mesika
+  dbname: nutrimatch
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 15m
+
+jwt:
+  access_token_secret: "your-access-token-secret-change-in-production"
+  refresh_token_secret: "your-refresh-token-secret-change-in-production"
+  access_token_expiry: 15m
+  refresh_token_expiry: 168h  # 7 days
+  issuer: "nutrimatch-api"
+  audience: "nutrimatch-clients"
+
+logging:
+  level: info
+  format: json
+  output: stdout
+  error_output: stderr
+
+security:
+  argon_memory: 65536      # 64*1024
+  argon_iterations: 3
+  argon_parallelism: 2
+  argon_salt_length: 16
+  argon_key_length: 32
+  rate_limit: 100
+  rate_limit_window: 1m

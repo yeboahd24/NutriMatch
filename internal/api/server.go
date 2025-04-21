@@ -3,6 +3,9 @@ package api
 import (
 	"database/sql"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -10,6 +13,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
 	"github.com/rs/zerolog"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/yeboahd24/nutrimatch/internal/api/handler"
 	authMiddleware "github.com/yeboahd24/nutrimatch/internal/api/middleware/auth"
 	errorsMiddleware "github.com/yeboahd24/nutrimatch/internal/api/middleware/errors"
@@ -122,6 +126,35 @@ func (s *Server) registerRoutes() error {
 			w.Write([]byte("v1.0.0"))
 		})
 
+		// Swagger UI - using a more specific pattern to avoid conflicts
+		r.Get("/swagger/ui/*", httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"), // The URL pointing to API definition
+			httpSwagger.DeepLinking(true),
+			httpSwagger.DocExpansion("list"),
+			httpSwagger.DomID("swagger-ui"),
+		))
+
+		// Serve Swagger static files
+		workDir, _ := os.Getwd()
+		swaggerDir := filepath.Join(workDir, "docs")
+		FileServer(r, "/swagger-static", http.Dir(swaggerDir))
+
+		// Direct route for Swagger JSON
+		r.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			http.ServeFile(w, r, filepath.Join(swaggerDir, "doc.json"))
+		})
+
+		// Redirect from /swagger/index.html to /swagger/ui/
+		r.Get("/swagger/index.html", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/swagger/ui/", http.StatusMovedPermanently)
+		})
+
+		// Redirect from /swagger to /swagger/ui/
+		r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/swagger/ui/", http.StatusMovedPermanently)
+		})
+
 		// Auth routes
 		r.Route("/api/v1/auth", authHandler.RegisterRoutes)
 
@@ -165,4 +198,19 @@ func (s *Server) Close() error {
 		return s.DB.Close()
 	}
 	return nil
+}
+
+// FileServer conveniently sets up a http.FileServer handler to serve
+// static files from a http.FileSystem.
+func FileServer(r chi.Router, path string, root http.FileSystem) {
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		path += "/"
+	}
+	r.Get(path+"*", func(w http.ResponseWriter, r *http.Request) {
+		rctx := chi.RouteContext(r.Context())
+		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
+		fs.ServeHTTP(w, r)
+	})
 }

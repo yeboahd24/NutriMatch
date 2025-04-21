@@ -86,7 +86,25 @@ docker-compose up -d
 
 ## API Documentation
 
-API documentation is available at `/swagger/index.html` when the server is running.
+NutriMatch uses OpenAPI/Swagger for API documentation. The documentation is automatically generated from code annotations.
+
+### Accessing the API Documentation
+
+API documentation is available at `/swagger/ui/` when the server is running.
+
+### Generating API Documentation
+
+To generate or update the API documentation:
+
+```bash
+# Using the provided script
+./scripts/generate_swagger.sh
+
+# Or using make
+make swagger
+```
+
+This will generate the Swagger specification files in the `docs` directory.
 
 ## Development
 

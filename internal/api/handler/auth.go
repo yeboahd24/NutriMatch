@@ -32,7 +32,17 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/logout", h.Logout)
 }
 
-// Login handles user login
+// @Summary Login user
+// @Description Authenticate a user and return access and refresh tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body docs.LoginRequest true "User credentials"
+// @Success 200 {object} docs.Response{data=docs.TokenResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Email    string `json:"email"`
@@ -62,7 +72,17 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Register handles user registration
+// @Summary Register new user
+// @Description Register a new user in the system
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body docs.RegisterRequest true "User registration information"
+// @Success 201 {object} docs.Response{data=docs.MessageResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 409 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Email    string `json:"email"`
@@ -96,7 +116,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	RespondCreated(w, map[string]string{"message": "User registered successfully"})
 }
 
-// RefreshToken handles token refresh
+// @Summary Refresh token
+// @Description Refresh an expired access token using a valid refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param refresh_token body docs.RefreshTokenRequest true "Refresh token"
+// @Success 200 {object} docs.Response{data=docs.TokenResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
@@ -136,7 +166,17 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Logout handles user logout
+// @Summary Logout user
+// @Description Revoke a refresh token to log out a user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param refresh_token body docs.RefreshTokenRequest true "Refresh token to revoke"
+// @Success 200 {object} docs.Response{data=docs.MessageResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`

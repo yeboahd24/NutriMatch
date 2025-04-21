@@ -41,6 +41,18 @@ func (h *ProfileHandler) RegisterRoutes(r chi.Router) {
 	r.Delete("/{id}", h.DeleteProfile)
 }
 
+// @Summary Create user profile
+// @Description Create a new profile for a user
+// @Tags profiles
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param profile body docs.ProfileRequest true "Profile information"
+// @Success 201 {object} docs.ProfileResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/profiles/{userId} [post]
 func (h *ProfileHandler) CreateProfile(w http.ResponseWriter, r *http.Request) {
 	// Get the user ID from the URL parameter
 	userID := chi.URLParam(r, "userId")
@@ -103,6 +115,17 @@ func (h *ProfileHandler) CreateProfile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(profile)
 }
 
+// @Summary Get profile by ID
+// @Description Get a profile by its ID
+// @Tags profiles
+// @Accept json
+// @Produce json
+// @Param id path string true "Profile ID"
+// @Success 200 {object} docs.ProfileResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/profiles/{id} [get]
 func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id").(string)
 	profile, err := h.profileService.GetProfile(r.Context(), userID)
@@ -119,6 +142,19 @@ func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, profile)
 }
 
+// @Summary Update profile
+// @Description Update an existing profile
+// @Tags profiles
+// @Accept json
+// @Produce json
+// @Param id path string true "Profile ID"
+// @Param profile body docs.ProfileRequest true "Updated profile information"
+// @Success 200 {object} docs.ProfileResponse
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/profiles/{id} [put]
 func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	var input profile.Profile
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -213,6 +249,16 @@ func (h *ProfileHandler) CheckProfileExists(w http.ResponseWriter, r *http.Reque
 }
 
 // ListUserProfiles returns all profiles for the authenticated user
+// @Summary List user profiles
+// @Description Get all profiles for the authenticated user
+// @Tags profiles
+// @Accept json
+// @Produce json
+// @Success 200 {object} docs.Response{data=[]docs.ProfileResponse}
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/profiles/user/me [get]
 func (h *ProfileHandler) ListUserProfiles(w http.ResponseWriter, r *http.Request) {
 	// Get the authenticated user ID from the context
 	userID, ok := auth.GetUserID(r)
@@ -279,6 +325,19 @@ func (h *ProfileHandler) GetAllProfiles(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// @Summary Delete profile
+// @Description Delete a profile by its ID
+// @Tags profiles
+// @Accept json
+// @Produce json
+// @Param id path string true "Profile ID"
+// @Success 204 "No Content"
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 403 {object} docs.ErrorResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/profiles/{id} [delete]
 func (h *ProfileHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 

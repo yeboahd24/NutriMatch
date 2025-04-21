@@ -46,6 +46,18 @@ func (h *FoodHandler) RegisterRoutes(r chi.Router) {
 	})
 }
 
+// @Summary Search foods
+// @Description Search for foods by name or other criteria
+// @Tags foods
+// @Accept json
+// @Produce json
+// @Param q query string false "Search query"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Number of items per page" default(10)
+// @Success 200 {object} docs.Response{data=[]docs.FoodResponse,meta=docs.PaginationMeta}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/foods [get]
 func (h *FoodHandler) SearchFoods(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -68,6 +80,16 @@ func (h *FoodHandler) SearchFoods(w http.ResponseWriter, r *http.Request) {
 	response.JSONWithMeta(w, http.StatusOK, foods, meta)
 }
 
+// @Summary Get food by ID
+// @Description Get detailed information about a specific food
+// @Tags foods
+// @Accept json
+// @Produce json
+// @Param id path string true "Food ID"
+// @Success 200 {object} docs.Response{data=docs.FoodDetailResponse}
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/foods/{id} [get]
 func (h *FoodHandler) GetFood(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	food, err := h.foodService.GetFood(r.Context(), id)
@@ -84,6 +106,18 @@ func (h *FoodHandler) GetFood(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, food)
 }
 
+// @Summary Get foods by category
+// @Description Get foods filtered by category
+// @Tags foods
+// @Accept json
+// @Produce json
+// @Param category path string true "Food category"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Number of items per page" default(10)
+// @Success 200 {object} docs.Response{data=map[string]interface{},meta=docs.PaginationMeta}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/foods/category/{category} [get]
 func (h *FoodHandler) GetFoodsByCategory(w http.ResponseWriter, r *http.Request) {
 	category := chi.URLParam(r, "category")
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -111,6 +145,20 @@ func (h *FoodHandler) GetFoodsByCategory(w http.ResponseWriter, r *http.Request)
 	response.JSONWithMeta(w, http.StatusOK, data, meta)
 }
 
+// @Summary Rate a food
+// @Description Add or update a user's rating for a food
+// @Tags foods
+// @Accept json
+// @Produce json
+// @Param foodId path string true "Food ID"
+// @Param rating body docs.RatingRequest true "Rating information"
+// @Security BearerAuth
+// @Success 200 {object} docs.Response{data=docs.RatingResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 404 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Router /api/v1/foods/{foodId}/rate [post]
 func (h *FoodHandler) RateFood(w http.ResponseWriter, r *http.Request) {
 	foodID := chi.URLParam(r, "foodId")
 	if foodID == "" {

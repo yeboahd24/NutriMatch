@@ -83,6 +83,18 @@ func (h *RecommendationHandler) GetMealPlanRecommendations(w http.ResponseWriter
 	})
 }
 
+// @Summary Get food alternatives
+// @Description Get alternative food suggestions for a specific food item
+// @Tags recommendations
+// @Accept json
+// @Produce json
+// @Param foodId path string true "Food ID"
+// @Param limit query int false "Number of alternatives to return" default(5)
+// @Success 200 {object} docs.Response{data=docs.AlternativesResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/recommendations/alternatives/{foodId} [get]
 func (h *RecommendationHandler) GetFoodAlternatives(w http.ResponseWriter, r *http.Request) {
 	foodID := chi.URLParam(r, "foodId")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -109,6 +121,19 @@ func (h *RecommendationHandler) GetFoodAlternatives(w http.ResponseWriter, r *ht
 	})
 }
 
+// @Summary Get food recommendations
+// @Description Get personalized food recommendations for the authenticated user
+// @Tags recommendations
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of recommendations to return" default(10)
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param profileId query string false "Profile ID to use for recommendations"
+// @Success 200 {object} docs.Response{data=docs.RecommendationResponse}
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/recommendations [get]
 func (h *RecommendationHandler) GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context using the auth middleware helper
 	userID, ok := auth.GetUserID(r)
@@ -163,6 +188,18 @@ func (h *RecommendationHandler) GetRecommendations(w http.ResponseWriter, r *htt
 	})
 }
 
+// @Summary Filter food recommendations
+// @Description Filter food recommendations based on specific criteria
+// @Tags recommendations
+// @Accept json
+// @Produce json
+// @Param filter body docs.RecommendationRequest true "Filter criteria"
+// @Success 200 {object} docs.Response{data=docs.RecommendationResponse}
+// @Failure 400 {object} docs.ErrorResponse
+// @Failure 401 {object} docs.ErrorResponse
+// @Failure 500 {object} docs.ErrorResponse
+// @Security BearerAuth
+// @Router /api/v1/recommendations/filter [post]
 func (h *RecommendationHandler) FilterRecommendations(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context using the auth middleware helper
 	userID, ok := auth.GetUserID(r)

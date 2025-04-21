@@ -1,0 +1,1042 @@
+basePath: /api/v1
+definitions:
+  docs.AlternativesResponse:
+    properties:
+      alternatives:
+        items:
+          $ref: '#/definitions/docs.FoodResponse'
+        type: array
+      food_id:
+        type: string
+      limit:
+        type: integer
+    type: object
+  docs.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  docs.FoodDetailResponse:
+    properties:
+      allergen_info:
+        type: string
+      calories:
+        type: number
+      carbohydrates:
+        type: number
+      category:
+        type: string
+      fat:
+        type: number
+      fiber:
+        type: number
+      id:
+        type: string
+      image_url:
+        type: string
+      ingredients:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      nutrition_per_serving:
+        additionalProperties:
+          type: number
+        type: object
+      protein:
+        type: number
+      serving_size:
+        type: string
+      serving_size_unit:
+        type: string
+      sodium:
+        type: number
+      sugar:
+        type: number
+    type: object
+  docs.FoodResponse:
+    properties:
+      calories:
+        type: number
+      carbohydrates:
+        type: number
+      category:
+        type: string
+      fat:
+        type: number
+      fiber:
+        type: number
+      id:
+        type: string
+      image_url:
+        type: string
+      name:
+        type: string
+      protein:
+        type: number
+      sodium:
+        type: number
+      sugar:
+        type: number
+    type: object
+  docs.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  docs.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  docs.PaginationMeta:
+    properties:
+      current_page:
+        type: integer
+      page_size:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  docs.ProfileRequest:
+    properties:
+      age:
+        example: 30
+        type: integer
+      allergies:
+        example:
+        - '["peanuts"'
+        - ' "shellfish"]'
+        items:
+          type: string
+        type: array
+      gender:
+        example: male
+        type: string
+      goals:
+        example:
+        - '["weight_loss"'
+        - ' "muscle_gain"]'
+        items:
+          type: string
+        type: array
+      height:
+        example: 180
+        type: number
+      is_default:
+        example: true
+        type: boolean
+      preferences:
+        example:
+        - '["vegetarian"'
+        - ' "low_carb"]'
+        items:
+          type: string
+        type: array
+      weight:
+        example: 75.5
+        type: number
+    type: object
+  docs.ProfileResponse:
+    properties:
+      age:
+        type: integer
+      allergies:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      gender:
+        type: string
+      goals:
+        items:
+          type: string
+        type: array
+      height:
+        type: number
+      id:
+        type: string
+      is_default:
+        type: boolean
+      preferences:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      weight:
+        type: number
+    type: object
+  docs.RatingRequest:
+    properties:
+      comments:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - rating
+    type: object
+  docs.RatingResponse:
+    properties:
+      comments:
+        type: string
+      created_at:
+        type: string
+      food_id:
+        type: string
+      id:
+        type: string
+      rating:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  docs.RecommendationRequest:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      limit:
+        type: integer
+      max_calories:
+        type: integer
+      max_fat:
+        type: number
+      min_protein:
+        type: number
+      offset:
+        type: integer
+      profile_id:
+        type: string
+    type: object
+  docs.RecommendationResponse:
+    properties:
+      applied_rules:
+        items:
+          type: string
+        type: array
+      pagination:
+        properties:
+          limit:
+            type: integer
+          offset:
+            type: integer
+        type: object
+      recommendations:
+        items:
+          $ref: '#/definitions/docs.FoodResponse'
+        type: array
+      total_count:
+        type: integer
+    type: object
+  docs.ReferenceItem:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  docs.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  docs.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  docs.Response:
+    properties:
+      data: {}
+      meta: {}
+      success:
+        type: boolean
+    type: object
+  docs.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@nutrimatch.com
+    name: API Support
+    url: http://www.nutrimatch.com/support
+  description: A personalized nutrition recommendation system built on the OpenNutrition
+    dataset
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: NutriMatch API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return access and refresh tokens
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/docs.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.TokenResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke a refresh token to log out a user
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.MessageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Logout user
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh an expired access token using a valid refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.TokenResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Refresh token
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user in the system
+      parameters:
+      - description: User registration information
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.MessageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /api/v1/foods:
+    get:
+      consumes:
+      - application/json
+      description: Search for foods by name or other criteria
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.FoodResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.PaginationMeta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Search foods
+      tags:
+      - foods
+  /api/v1/foods/{foodId}/rate:
+    post:
+      consumes:
+      - application/json
+      description: Add or update a user's rating for a food
+      parameters:
+      - description: Food ID
+        in: path
+        name: foodId
+        required: true
+        type: string
+      - description: Rating information
+        in: body
+        name: rating
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RatingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RatingResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Rate a food
+      tags:
+      - foods
+  /api/v1/foods/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific food
+      parameters:
+      - description: Food ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.FoodDetailResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Get food by ID
+      tags:
+      - foods
+  /api/v1/foods/category/{category}:
+    get:
+      consumes:
+      - application/json
+      description: Get foods filtered by category
+      parameters:
+      - description: Food category
+        in: path
+        name: category
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+                meta:
+                  $ref: '#/definitions/docs.PaginationMeta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Get foods by category
+      tags:
+      - foods
+  /api/v1/profiles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a profile by its ID
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete profile
+      tags:
+      - profiles
+    get:
+      consumes:
+      - application/json
+      description: Get a profile by its ID
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ProfileResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get profile by ID
+      tags:
+      - profiles
+    put:
+      consumes:
+      - application/json
+      description: Update an existing profile
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated profile information
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/docs.ProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update profile
+      tags:
+      - profiles
+  /api/v1/profiles/{userId}:
+    post:
+      consumes:
+      - application/json
+      description: Create a new profile for a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Profile information
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/docs.ProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/docs.ProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Create user profile
+      tags:
+      - profiles
+  /api/v1/profiles/user/me:
+    get:
+      consumes:
+      - application/json
+      description: Get all profiles for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.ProfileResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List user profiles
+      tags:
+      - profiles
+  /api/v1/recommendations:
+    get:
+      consumes:
+      - application/json
+      description: Get personalized food recommendations for the authenticated user
+      parameters:
+      - default: 10
+        description: Number of recommendations to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - description: Profile ID to use for recommendations
+        in: query
+        name: profileId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RecommendationResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get food recommendations
+      tags:
+      - recommendations
+  /api/v1/recommendations/alternatives/{foodId}:
+    get:
+      consumes:
+      - application/json
+      description: Get alternative food suggestions for a specific food item
+      parameters:
+      - description: Food ID
+        in: path
+        name: foodId
+        required: true
+        type: string
+      - default: 5
+        description: Number of alternatives to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.AlternativesResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get food alternatives
+      tags:
+      - recommendations
+  /api/v1/recommendations/filter:
+    post:
+      consumes:
+      - application/json
+      description: Filter food recommendations based on specific criteria
+      parameters:
+      - description: Filter criteria
+        in: body
+        name: filter
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RecommendationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RecommendationResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Filter food recommendations
+      tags:
+      - recommendations
+  /api/v1/reference/allergens:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all allergens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.ReferenceItem'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Get allergens
+      tags:
+      - reference
+  /api/v1/reference/dietary-patterns:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all dietary patterns
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.ReferenceItem'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Get dietary patterns
+      tags:
+      - reference
+  /api/v1/reference/health-conditions:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all health conditions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.ReferenceItem'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Get health conditions
+      tags:
+      - reference
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and the JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

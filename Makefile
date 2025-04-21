@@ -1,4 +1,4 @@
-.PHONY: setup migrate migrate-down generate build run test clean
+.PHONY: setup migrate migrate-down generate build run run-swagger test clean swagger swagger-deps
 
 # Default target
 all: build
@@ -27,6 +27,10 @@ build:
 run:
 	go run cmd/api/main.go
 
+# Run the application with Swagger
+run-swagger: swagger
+	go run cmd/api/main.go
+
 # Run tests
 test:
 	go test ./...
@@ -43,3 +47,11 @@ import:
 		exit 1; \
 	fi
 	go run scripts/import.go $(file)
+
+# Generate Swagger documentation
+swagger:
+	./scripts/generate_swagger.sh
+
+# Install Swagger dependencies
+swagger-deps:
+	./scripts/install_swagger_deps.sh

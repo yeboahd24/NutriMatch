@@ -1,15 +1,8 @@
 package auth
 
 import (
-	"errors"
-
 	"github.com/alexedwards/argon2id"
 	"github.com/yeboahd24/nutrimatch/internal/config"
-)
-
-// Common errors
-var (
-	ErrInvalidPassword = errors.New("invalid password")
 )
 
 // PasswordService handles password hashing and verification
@@ -33,12 +26,12 @@ func (s *PasswordService) HashPassword(password string) (string, error) {
 		SaltLength:  s.config.ArgonSaltLength,
 		KeyLength:   s.config.ArgonKeyLength,
 	}
-	
+
 	hash, err := argon2id.CreateHash(password, params)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return hash, nil
 }
 

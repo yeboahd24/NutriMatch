@@ -13,8 +13,22 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+const checkProfileExists = `-- name: CheckProfileExists :one
+SELECT EXISTS(
+    SELECT 1 FROM user_profiles WHERE id = $1
+) AS exists
+`
+
+func (q *Queries) CheckProfileExists(ctx context.Context, id uuid.UUID) (bool, error) {
+	row := q.queryRow(ctx, q.checkProfileExistsStmt, checkProfileExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createUserProfile = `-- name: CreateUserProfile :one
 INSERT INTO user_profiles (
+    id,
     user_id,
     profile_name,
     is_default,
@@ -28,12 +42,13 @@ INSERT INTO user_profiles (
     preferred_foods,
     cuisine_preferences
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 RETURNING id, user_id, profile_name, is_default, health_conditions, dietary_restrictions, allergens, goal_type, calorie_target, macronutrient_preference, disliked_foods, preferred_foods, cuisine_preferences, created_at, updated_at
 `
 
 type CreateUserProfileParams struct {
+	ID                      uuid.UUID             `json:"id"`
 	UserID                  uuid.UUID             `json:"user_id"`
 	ProfileName             string                `json:"profile_name"`
 	IsDefault               sql.NullBool          `json:"is_default"`
@@ -50,6 +65,7 @@ type CreateUserProfileParams struct {
 
 func (q *Queries) CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) (UserProfile, error) {
 	row := q.queryRow(ctx, q.createUserProfileStmt, createUserProfile,
+		arg.ID,
 		arg.UserID,
 		arg.ProfileName,
 		arg.IsDefault,
@@ -107,6 +123,33 @@ LIMIT 1
 
 func (q *Queries) GetDefaultUserProfile(ctx context.Context, userID uuid.UUID) (UserProfile, error) {
 	row := q.queryRow(ctx, q.getDefaultUserProfileStmt, getDefaultUserProfile, userID)
+	var i UserProfile
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ProfileName,
+		&i.IsDefault,
+		&i.HealthConditions,
+		&i.DietaryRestrictions,
+		&i.Allergens,
+		&i.GoalType,
+		&i.CalorieTarget,
+		&i.MacronutrientPreference,
+		&i.DislikedFoods,
+		&i.PreferredFoods,
+		&i.CuisinePreferences,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProfileByIDDirect = `-- name: GetProfileByIDDirect :one
+SELECT id, user_id, profile_name, is_default, health_conditions, dietary_restrictions, allergens, goal_type, calorie_target, macronutrient_preference, disliked_foods, preferred_foods, cuisine_preferences, created_at, updated_at FROM user_profiles WHERE id = $1
+`
+
+func (q *Queries) GetProfileByIDDirect(ctx context.Context, id uuid.UUID) (UserProfile, error) {
+	row := q.queryRow(ctx, q.getProfileByIDDirectStmt, getProfileByIDDirect, id)
 	var i UserProfile
 	err := row.Scan(
 		&i.ID,

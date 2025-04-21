@@ -12,29 +12,40 @@ import (
 )
 
 type Querier interface {
+	CheckProfileExists(ctx context.Context, id uuid.UUID) (bool, error)
 	CountFoods(ctx context.Context) (int64, error)
 	CreateFood(ctx context.Context, arg CreateFoodParams) (Food, error)
+	CreateFoodRating(ctx context.Context, arg CreateFoodRatingParams) (FoodRating, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) (UserProfile, error)
 	DeleteExpiredRefreshTokens(ctx context.Context) error
 	DeleteFood(ctx context.Context, id string) error
+	DeleteFoodRating(ctx context.Context, arg DeleteFoodRatingParams) error
+	DeleteSavedFood(ctx context.Context, arg DeleteSavedFoodParams) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteUserProfile(ctx context.Context, arg DeleteUserProfileParams) error
 	GetDefaultUserProfile(ctx context.Context, userID uuid.UUID) (UserProfile, error)
 	GetFoodByEAN13(ctx context.Context, ean13 sql.NullString) (Food, error)
 	GetFoodByID(ctx context.Context, id string) (Food, error)
+	GetFoodRating(ctx context.Context, arg GetFoodRatingParams) (FoodRating, error)
+	GetProfileByIDDirect(ctx context.Context, id uuid.UUID) (UserProfile, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
+	GetSavedFood(ctx context.Context, arg GetSavedFoodParams) (UserSavedFood, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserProfileByID(ctx context.Context, id uuid.UUID) (UserProfile, error)
 	GetUserProfiles(ctx context.Context, userID uuid.UUID) ([]UserProfile, error)
 	ListFoods(ctx context.Context, arg ListFoodsParams) ([]Food, error)
 	ListFoodsByType(ctx context.Context, arg ListFoodsByTypeParams) ([]Food, error)
+	ListSavedFoods(ctx context.Context, arg ListSavedFoodsParams) ([]UserSavedFood, error)
+	ListUserRatings(ctx context.Context, arg ListUserRatingsParams) ([]FoodRating, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
 	RevokeRefreshToken(ctx context.Context, token string) error
+	SaveFood(ctx context.Context, arg SaveFoodParams) (UserSavedFood, error)
 	SearchFoodsByName(ctx context.Context, arg SearchFoodsByNameParams) ([]Food, error)
 	SetProfileAsDefault(ctx context.Context, arg SetProfileAsDefaultParams) error
+	UpdateFoodRating(ctx context.Context, arg UpdateFoodRatingParams) (FoodRating, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserEmailVerification(ctx context.Context, arg UpdateUserEmailVerificationParams) error
 	UpdateUserLastLogin(ctx context.Context, id uuid.UUID) error

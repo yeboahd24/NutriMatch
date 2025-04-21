@@ -88,22 +88,25 @@ func (s *Server) registerRoutes() error {
 	profileRepo := postgres.NewProfileRepository(queries)
 	foodRepo := postgres.NewFoodRepository(queries)
 	authRepo := postgres.NewAuthRepository(queries)
+	referenceRepo := postgres.NewReferenceRepository(queries)
 
 	// Create services
 	passwordService := auth.NewPasswordService(s.Config.Security)
 	jwtService := auth.NewJWTService(s.Config.JWT)
-	userService := service.NewUserService(userRepo, passwordService, s.Logger)
+	userService := service.NewUserService(userRepo, authRepo, jwtService, passwordService, s.Logger)
 	authService := service.NewAuthService(userRepo, authRepo, jwtService, passwordService, s.Logger)
 	profileService := service.NewProfileService(profileRepo, userRepo, s.Logger)
 	foodService := service.NewFoodService(foodRepo, s.Logger)
 	recommendationService := service.NewRecommendationService(foodRepo, profileRepo, s.Logger)
+	referenceService := service.NewReferenceService(referenceRepo, s.Logger)
 
 	// Create handlers
 	authHandler := handler.NewAuthHandler(authService, s.Logger)
 	userHandler := handler.NewUserHandler(userService, s.Logger)
 	profileHandler := handler.NewProfileHandler(profileService, s.Logger)
-	foodHandler := handler.NewFoodHandler(foodService, s.Logger)
+	foodHandler := handler.NewFoodHandler(foodService, s.Logger, s.Config.JWT)
 	recommendationHandler := handler.NewRecommendationHandler(recommendationService, s.Logger)
+	referenceHandler := handler.NewReferenceHandler(referenceService, s.Logger)
 
 	// Public routes
 	s.Router.Group(func(r chi.Router) {
@@ -124,6 +127,15 @@ func (s *Server) registerRoutes() error {
 
 		// Food routes (public)
 		r.Route("/api/v1/foods", foodHandler.RegisterRoutes)
+
+		// Reference data routes (public)
+		r.Route("/api/v1/reference", referenceHandler.RegisterRoutes)
+
+		// Public user routes
+		r.Route("/api/v1/users", func(r chi.Router) {
+			r.Post("/register", userHandler.Register)
+			r.Post("/login", userHandler.Login)
+		})
 	})
 
 	// Protected routes
@@ -131,8 +143,11 @@ func (s *Server) registerRoutes() error {
 		// Use auth middleware
 		r.Use(authMiddleware.Middleware(s.Config.JWT))
 
-		// User routes
-		r.Route("/api/v1/users", userHandler.RegisterRoutes)
+		// Protected user routes
+		r.Route("/api/v1/users/me", func(r chi.Router) {
+			r.Get("/", userHandler.GetProfile)
+			r.Put("/", userHandler.UpdateProfile)
+		})
 
 		// Profile routes
 		r.Route("/api/v1/profiles", profileHandler.RegisterRoutes)

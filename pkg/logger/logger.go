@@ -28,12 +28,12 @@ func New(cfg config.LogConfig) zerolog.Logger {
 	}
 
 	// Configure error output
-	var errorOutput io.Writer = os.Stderr
+	// We're not using separate error output for now, but keeping the config option for future use
+	// var errorOutput io.Writer = os.Stderr
 	if cfg.ErrorOutput != "stderr" && cfg.ErrorOutput != "" && cfg.ErrorOutput != cfg.Output {
-		file, err := os.OpenFile(cfg.ErrorOutput, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err == nil {
-			errorOutput = file
-		}
+		// Could set up separate error output here if needed
+		// For now, we'll just log a message to stdout
+		os.Stdout.WriteString("Separate error output configured but not implemented\n")
 	}
 
 	// Configure format

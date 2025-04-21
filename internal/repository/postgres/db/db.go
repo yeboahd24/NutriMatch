@@ -24,11 +24,17 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.checkProfileExistsStmt, err = db.PrepareContext(ctx, checkProfileExists); err != nil {
+		return nil, fmt.Errorf("error preparing query CheckProfileExists: %w", err)
+	}
 	if q.countFoodsStmt, err = db.PrepareContext(ctx, countFoods); err != nil {
 		return nil, fmt.Errorf("error preparing query CountFoods: %w", err)
 	}
 	if q.createFoodStmt, err = db.PrepareContext(ctx, createFood); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateFood: %w", err)
+	}
+	if q.createFoodRatingStmt, err = db.PrepareContext(ctx, createFoodRating); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateFoodRating: %w", err)
 	}
 	if q.createRefreshTokenStmt, err = db.PrepareContext(ctx, createRefreshToken); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateRefreshToken: %w", err)
@@ -45,6 +51,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteFoodStmt, err = db.PrepareContext(ctx, deleteFood); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteFood: %w", err)
 	}
+	if q.deleteFoodRatingStmt, err = db.PrepareContext(ctx, deleteFoodRating); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteFoodRating: %w", err)
+	}
+	if q.deleteSavedFoodStmt, err = db.PrepareContext(ctx, deleteSavedFood); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteSavedFood: %w", err)
+	}
 	if q.deleteUserStmt, err = db.PrepareContext(ctx, deleteUser); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUser: %w", err)
 	}
@@ -60,8 +72,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getFoodByIDStmt, err = db.PrepareContext(ctx, getFoodByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetFoodByID: %w", err)
 	}
+	if q.getFoodRatingStmt, err = db.PrepareContext(ctx, getFoodRating); err != nil {
+		return nil, fmt.Errorf("error preparing query GetFoodRating: %w", err)
+	}
+	if q.getProfileByIDDirectStmt, err = db.PrepareContext(ctx, getProfileByIDDirect); err != nil {
+		return nil, fmt.Errorf("error preparing query GetProfileByIDDirect: %w", err)
+	}
 	if q.getRefreshTokenStmt, err = db.PrepareContext(ctx, getRefreshToken); err != nil {
 		return nil, fmt.Errorf("error preparing query GetRefreshToken: %w", err)
+	}
+	if q.getSavedFoodStmt, err = db.PrepareContext(ctx, getSavedFood); err != nil {
+		return nil, fmt.Errorf("error preparing query GetSavedFood: %w", err)
 	}
 	if q.getUserByEmailStmt, err = db.PrepareContext(ctx, getUserByEmail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByEmail: %w", err)
@@ -81,17 +102,29 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listFoodsByTypeStmt, err = db.PrepareContext(ctx, listFoodsByType); err != nil {
 		return nil, fmt.Errorf("error preparing query ListFoodsByType: %w", err)
 	}
+	if q.listSavedFoodsStmt, err = db.PrepareContext(ctx, listSavedFoods); err != nil {
+		return nil, fmt.Errorf("error preparing query ListSavedFoods: %w", err)
+	}
+	if q.listUserRatingsStmt, err = db.PrepareContext(ctx, listUserRatings); err != nil {
+		return nil, fmt.Errorf("error preparing query ListUserRatings: %w", err)
+	}
 	if q.revokeAllUserRefreshTokensStmt, err = db.PrepareContext(ctx, revokeAllUserRefreshTokens); err != nil {
 		return nil, fmt.Errorf("error preparing query RevokeAllUserRefreshTokens: %w", err)
 	}
 	if q.revokeRefreshTokenStmt, err = db.PrepareContext(ctx, revokeRefreshToken); err != nil {
 		return nil, fmt.Errorf("error preparing query RevokeRefreshToken: %w", err)
 	}
+	if q.saveFoodStmt, err = db.PrepareContext(ctx, saveFood); err != nil {
+		return nil, fmt.Errorf("error preparing query SaveFood: %w", err)
+	}
 	if q.searchFoodsByNameStmt, err = db.PrepareContext(ctx, searchFoodsByName); err != nil {
 		return nil, fmt.Errorf("error preparing query SearchFoodsByName: %w", err)
 	}
 	if q.setProfileAsDefaultStmt, err = db.PrepareContext(ctx, setProfileAsDefault); err != nil {
 		return nil, fmt.Errorf("error preparing query SetProfileAsDefault: %w", err)
+	}
+	if q.updateFoodRatingStmt, err = db.PrepareContext(ctx, updateFoodRating); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateFoodRating: %w", err)
 	}
 	if q.updateUserStmt, err = db.PrepareContext(ctx, updateUser); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUser: %w", err)
@@ -113,6 +146,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.checkProfileExistsStmt != nil {
+		if cerr := q.checkProfileExistsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing checkProfileExistsStmt: %w", cerr)
+		}
+	}
 	if q.countFoodsStmt != nil {
 		if cerr := q.countFoodsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countFoodsStmt: %w", cerr)
@@ -121,6 +159,11 @@ func (q *Queries) Close() error {
 	if q.createFoodStmt != nil {
 		if cerr := q.createFoodStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createFoodStmt: %w", cerr)
+		}
+	}
+	if q.createFoodRatingStmt != nil {
+		if cerr := q.createFoodRatingStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createFoodRatingStmt: %w", cerr)
 		}
 	}
 	if q.createRefreshTokenStmt != nil {
@@ -148,6 +191,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteFoodStmt: %w", cerr)
 		}
 	}
+	if q.deleteFoodRatingStmt != nil {
+		if cerr := q.deleteFoodRatingStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteFoodRatingStmt: %w", cerr)
+		}
+	}
+	if q.deleteSavedFoodStmt != nil {
+		if cerr := q.deleteSavedFoodStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteSavedFoodStmt: %w", cerr)
+		}
+	}
 	if q.deleteUserStmt != nil {
 		if cerr := q.deleteUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteUserStmt: %w", cerr)
@@ -173,9 +226,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getFoodByIDStmt: %w", cerr)
 		}
 	}
+	if q.getFoodRatingStmt != nil {
+		if cerr := q.getFoodRatingStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getFoodRatingStmt: %w", cerr)
+		}
+	}
+	if q.getProfileByIDDirectStmt != nil {
+		if cerr := q.getProfileByIDDirectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getProfileByIDDirectStmt: %w", cerr)
+		}
+	}
 	if q.getRefreshTokenStmt != nil {
 		if cerr := q.getRefreshTokenStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getRefreshTokenStmt: %w", cerr)
+		}
+	}
+	if q.getSavedFoodStmt != nil {
+		if cerr := q.getSavedFoodStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getSavedFoodStmt: %w", cerr)
 		}
 	}
 	if q.getUserByEmailStmt != nil {
@@ -208,6 +276,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listFoodsByTypeStmt: %w", cerr)
 		}
 	}
+	if q.listSavedFoodsStmt != nil {
+		if cerr := q.listSavedFoodsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listSavedFoodsStmt: %w", cerr)
+		}
+	}
+	if q.listUserRatingsStmt != nil {
+		if cerr := q.listUserRatingsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listUserRatingsStmt: %w", cerr)
+		}
+	}
 	if q.revokeAllUserRefreshTokensStmt != nil {
 		if cerr := q.revokeAllUserRefreshTokensStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing revokeAllUserRefreshTokensStmt: %w", cerr)
@@ -218,6 +296,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing revokeRefreshTokenStmt: %w", cerr)
 		}
 	}
+	if q.saveFoodStmt != nil {
+		if cerr := q.saveFoodStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing saveFoodStmt: %w", cerr)
+		}
+	}
 	if q.searchFoodsByNameStmt != nil {
 		if cerr := q.searchFoodsByNameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing searchFoodsByNameStmt: %w", cerr)
@@ -226,6 +309,11 @@ func (q *Queries) Close() error {
 	if q.setProfileAsDefaultStmt != nil {
 		if cerr := q.setProfileAsDefaultStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing setProfileAsDefaultStmt: %w", cerr)
+		}
+	}
+	if q.updateFoodRatingStmt != nil {
+		if cerr := q.updateFoodRatingStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateFoodRatingStmt: %w", cerr)
 		}
 	}
 	if q.updateUserStmt != nil {
@@ -292,29 +380,40 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
+	checkProfileExistsStmt          *sql.Stmt
 	countFoodsStmt                  *sql.Stmt
 	createFoodStmt                  *sql.Stmt
+	createFoodRatingStmt            *sql.Stmt
 	createRefreshTokenStmt          *sql.Stmt
 	createUserStmt                  *sql.Stmt
 	createUserProfileStmt           *sql.Stmt
 	deleteExpiredRefreshTokensStmt  *sql.Stmt
 	deleteFoodStmt                  *sql.Stmt
+	deleteFoodRatingStmt            *sql.Stmt
+	deleteSavedFoodStmt             *sql.Stmt
 	deleteUserStmt                  *sql.Stmt
 	deleteUserProfileStmt           *sql.Stmt
 	getDefaultUserProfileStmt       *sql.Stmt
 	getFoodByEAN13Stmt              *sql.Stmt
 	getFoodByIDStmt                 *sql.Stmt
+	getFoodRatingStmt               *sql.Stmt
+	getProfileByIDDirectStmt        *sql.Stmt
 	getRefreshTokenStmt             *sql.Stmt
+	getSavedFoodStmt                *sql.Stmt
 	getUserByEmailStmt              *sql.Stmt
 	getUserByIDStmt                 *sql.Stmt
 	getUserProfileByIDStmt          *sql.Stmt
 	getUserProfilesStmt             *sql.Stmt
 	listFoodsStmt                   *sql.Stmt
 	listFoodsByTypeStmt             *sql.Stmt
+	listSavedFoodsStmt              *sql.Stmt
+	listUserRatingsStmt             *sql.Stmt
 	revokeAllUserRefreshTokensStmt  *sql.Stmt
 	revokeRefreshTokenStmt          *sql.Stmt
+	saveFoodStmt                    *sql.Stmt
 	searchFoodsByNameStmt           *sql.Stmt
 	setProfileAsDefaultStmt         *sql.Stmt
+	updateFoodRatingStmt            *sql.Stmt
 	updateUserStmt                  *sql.Stmt
 	updateUserEmailVerificationStmt *sql.Stmt
 	updateUserLastLoginStmt         *sql.Stmt
@@ -326,33 +425,49 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                              tx,
 		tx:                              tx,
+		checkProfileExistsStmt:          q.checkProfileExistsStmt,
 		countFoodsStmt:                  q.countFoodsStmt,
 		createFoodStmt:                  q.createFoodStmt,
+		createFoodRatingStmt:            q.createFoodRatingStmt,
 		createRefreshTokenStmt:          q.createRefreshTokenStmt,
 		createUserStmt:                  q.createUserStmt,
 		createUserProfileStmt:           q.createUserProfileStmt,
 		deleteExpiredRefreshTokensStmt:  q.deleteExpiredRefreshTokensStmt,
 		deleteFoodStmt:                  q.deleteFoodStmt,
+		deleteFoodRatingStmt:            q.deleteFoodRatingStmt,
+		deleteSavedFoodStmt:             q.deleteSavedFoodStmt,
 		deleteUserStmt:                  q.deleteUserStmt,
 		deleteUserProfileStmt:           q.deleteUserProfileStmt,
 		getDefaultUserProfileStmt:       q.getDefaultUserProfileStmt,
 		getFoodByEAN13Stmt:              q.getFoodByEAN13Stmt,
 		getFoodByIDStmt:                 q.getFoodByIDStmt,
+		getFoodRatingStmt:               q.getFoodRatingStmt,
+		getProfileByIDDirectStmt:        q.getProfileByIDDirectStmt,
 		getRefreshTokenStmt:             q.getRefreshTokenStmt,
+		getSavedFoodStmt:                q.getSavedFoodStmt,
 		getUserByEmailStmt:              q.getUserByEmailStmt,
 		getUserByIDStmt:                 q.getUserByIDStmt,
 		getUserProfileByIDStmt:          q.getUserProfileByIDStmt,
 		getUserProfilesStmt:             q.getUserProfilesStmt,
 		listFoodsStmt:                   q.listFoodsStmt,
 		listFoodsByTypeStmt:             q.listFoodsByTypeStmt,
+		listSavedFoodsStmt:              q.listSavedFoodsStmt,
+		listUserRatingsStmt:             q.listUserRatingsStmt,
 		revokeAllUserRefreshTokensStmt:  q.revokeAllUserRefreshTokensStmt,
 		revokeRefreshTokenStmt:          q.revokeRefreshTokenStmt,
+		saveFoodStmt:                    q.saveFoodStmt,
 		searchFoodsByNameStmt:           q.searchFoodsByNameStmt,
 		setProfileAsDefaultStmt:         q.setProfileAsDefaultStmt,
+		updateFoodRatingStmt:            q.updateFoodRatingStmt,
 		updateUserStmt:                  q.updateUserStmt,
 		updateUserEmailVerificationStmt: q.updateUserEmailVerificationStmt,
 		updateUserLastLoginStmt:         q.updateUserLastLoginStmt,
 		updateUserPasswordStmt:          q.updateUserPasswordStmt,
 		updateUserProfileStmt:           q.updateUserProfileStmt,
 	}
+}
+
+// GetDB returns the underlying database connection
+func (q *Queries) GetDB() DBTX {
+	return q.db
 }

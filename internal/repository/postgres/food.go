@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
 	"github.com/yeboahd24/nutrimatch/internal/domain/food"
 	"github.com/yeboahd24/nutrimatch/internal/repository/postgres/db"
@@ -121,6 +122,128 @@ func (r *foodRepository) Delete(id string) error {
 	return r.queries.DeleteFood(context.Background(), id)
 }
 
+func (r *foodRepository) CreateRating(rating *food.FoodRating) error {
+	result, err := r.queries.CreateFoodRating(context.Background(), db.CreateFoodRatingParams{
+		UserID:   rating.UserID,
+		FoodID:   rating.FoodID,
+		Rating:   int16(rating.Rating),
+		Comments: sql.NullString{String: rating.Comments, Valid: rating.Comments != ""},
+	})
+	if err != nil {
+		return err
+	}
+
+	rating.ID = result.ID
+	rating.CreatedAt = result.CreatedAt.Time
+	rating.UpdatedAt = result.UpdatedAt.Time
+	return nil
+}
+
+func (r *foodRepository) UpdateRating(rating *food.FoodRating) error {
+	result, err := r.queries.UpdateFoodRating(context.Background(), db.UpdateFoodRatingParams{
+		UserID:   rating.UserID,
+		FoodID:   rating.FoodID,
+		Rating:   int16(rating.Rating),
+		Comments: sql.NullString{String: rating.Comments, Valid: rating.Comments != ""},
+	})
+	if err != nil {
+		return err
+	}
+
+	rating.UpdatedAt = result.UpdatedAt.Time
+	return nil
+}
+
+func (r *foodRepository) GetRating(userID uuid.UUID, foodID string) (*food.FoodRating, error) {
+	result, err := r.queries.GetFoodRating(context.Background(), db.GetFoodRatingParams{
+		UserID: userID,
+		FoodID: foodID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapDbRatingToDomain(&result), nil
+}
+
+func (r *foodRepository) ListUserRatings(userID uuid.UUID, limit, offset int) ([]food.FoodRating, error) {
+	results, err := r.queries.ListUserRatings(context.Background(), db.ListUserRatingsParams{
+		UserID: userID,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ratings := make([]food.FoodRating, len(results))
+	for i, r := range results {
+		ratings[i] = *mapDbRatingToDomain(&r)
+	}
+	return ratings, nil
+}
+
+func (r *foodRepository) DeleteRating(userID uuid.UUID, foodID string) error {
+	return r.queries.DeleteFoodRating(context.Background(), db.DeleteFoodRatingParams{
+		UserID: userID,
+		FoodID: foodID,
+	})
+}
+
+func (r *foodRepository) SaveFood(saved *food.SavedFood) error {
+	result, err := r.queries.SaveFood(context.Background(), db.SaveFoodParams{
+		UserID:   saved.UserID,
+		FoodID:   saved.FoodID,
+		ListType: saved.ListType,
+	})
+	if err != nil {
+		return err
+	}
+
+	saved.ID = result.ID
+	saved.CreatedAt = result.CreatedAt.Time
+	return nil
+}
+
+func (r *foodRepository) GetSavedFood(userID uuid.UUID, foodID string, listType string) (*food.SavedFood, error) {
+	result, err := r.queries.GetSavedFood(context.Background(), db.GetSavedFoodParams{
+		UserID:   userID,
+		FoodID:   foodID,
+		ListType: listType,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapDbSavedFoodToDomain(&result), nil
+}
+
+func (r *foodRepository) ListSavedFoods(userID uuid.UUID, listType string, limit, offset int) ([]food.SavedFood, error) {
+	results, err := r.queries.ListSavedFoods(context.Background(), db.ListSavedFoodsParams{
+		UserID:   userID,
+		ListType: listType,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	savedFoods := make([]food.SavedFood, len(results))
+	for i, s := range results {
+		savedFoods[i] = *mapDbSavedFoodToDomain(&s)
+	}
+	return savedFoods, nil
+}
+
+func (r *foodRepository) DeleteSavedFood(userID uuid.UUID, foodID string, listType string) error {
+	return r.queries.DeleteSavedFood(context.Background(), db.DeleteSavedFoodParams{
+		UserID:   userID,
+		FoodID:   foodID,
+		ListType: listType,
+	})
+}
+
 func mapDbFoodToDomain(f *db.Food) *food.Food {
 	var alternateNames []string
 	var source []map[string]string
@@ -154,5 +277,27 @@ func mapDbFoodToDomain(f *db.Food) *food.Food {
 		IngredientAnalysis: ingredientAnalysis,
 		CreatedAt:          f.CreatedAt.Time,
 		UpdatedAt:          f.UpdatedAt.Time,
+	}
+}
+
+func mapDbRatingToDomain(r *db.FoodRating) *food.FoodRating {
+	return &food.FoodRating{
+		ID:        r.ID,
+		UserID:    r.UserID,
+		FoodID:    r.FoodID,
+		Rating:    int(r.Rating),
+		Comments:  r.Comments.String,
+		CreatedAt: r.CreatedAt.Time,
+		UpdatedAt: r.UpdatedAt.Time,
+	}
+}
+
+func mapDbSavedFoodToDomain(s *db.UserSavedFood) *food.SavedFood {
+	return &food.SavedFood{
+		ID:        s.ID,
+		UserID:    s.UserID,
+		FoodID:    s.FoodID,
+		ListType:  s.ListType,
+		CreatedAt: s.CreatedAt.Time,
 	}
 }

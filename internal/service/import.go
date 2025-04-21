@@ -216,8 +216,27 @@ func (i *FoodImporter) parseFood(fields []string, columnMap map[string]int) (foo
 
 // processBatch processes a batch of food items
 func (i *FoodImporter) processBatch(foods []db.Food) error {
+	ctx := context.Background()
+
+	// Get the underlying database connection and cast it to *sql.DB
+	sqlDB, ok := i.queries.GetDB().(*sql.DB)
+	if !ok {
+		return fmt.Errorf("expected *sql.DB connection, got %T", i.queries.GetDB())
+	}
+
+	// Start a transaction
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback() // Rollback if we return with an error
+
+	// Create a new Queries instance with the transaction
+	qtx := i.queries.WithTx(tx)
+
+	// Process all items in the transaction
 	for _, f := range foods {
-		_, err := i.queries.CreateFood(context.Background(), db.CreateFoodParams{
+		_, err := qtx.CreateFood(ctx, db.CreateFoodParams{
 			ID:                 f.ID,
 			Name:               f.Name,
 			AlternateNames:     f.AlternateNames,
@@ -232,11 +251,15 @@ func (i *FoodImporter) processBatch(foods []db.Food) error {
 			Ingredients:        f.Ingredients,
 			IngredientAnalysis: f.IngredientAnalysis,
 		})
-
 		if err != nil {
 			i.logger.Error().Err(err).Str("food_id", f.ID).Msg("Failed to insert food")
-			// Continue with other items
+			return fmt.Errorf("failed to insert food %s: %w", f.ID, err)
 		}
+	}
+
+	// Commit the transaction if all inserts succeeded
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

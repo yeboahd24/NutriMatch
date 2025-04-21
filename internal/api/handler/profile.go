@@ -2,25 +2,29 @@ package handler
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 	"github.com/yeboahd24/nutrimatch/internal/api/middleware/auth"
+	"github.com/yeboahd24/nutrimatch/internal/domain/profile"
 	"github.com/yeboahd24/nutrimatch/internal/service"
 	apperrors "github.com/yeboahd24/nutrimatch/pkg/errors"
+	"github.com/yeboahd24/nutrimatch/pkg/response"
 )
 
 type ProfileHandler struct {
 	BaseHandler
 	profileService service.ProfileService
+	validator      *validator.Validate
 }
 
 func NewProfileHandler(profileService service.ProfileService, logger zerolog.Logger) *ProfileHandler {
 	return &ProfileHandler{
 		BaseHandler:    NewBaseHandler(logger),
 		profileService: profileService,
+		validator:      validator.New(),
 	}
 }
 
@@ -100,181 +104,61 @@ func (h *ProfileHandler) CreateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	profile, err := h.profileService.GetProfile(r.Context(), id)
+	userID := r.Context().Value("user_id").(string)
+	profile, err := h.profileService.GetProfile(r.Context(), userID)
 	if err != nil {
-		// Handle database errors
 		if err.Error() == "sql: no rows in result set" {
-			appErr := apperrors.NotFound("Profile not found", err)
-			appErr.WriteJSON(w)
+			response.Error(w, apperrors.NotFound("profile not found", err))
 			return
 		}
-
-		appErr := apperrors.Internal("Failed to get profile", err)
-		appErr.WriteJSON(w)
+		h.logger.Error().Err(err).Str("user_id", userID).Msg("Failed to get profile")
+		response.Error(w, apperrors.Internal("Failed to get profile", err))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(profile)
+	response.JSON(w, http.StatusOK, profile)
 }
 
 func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-
-	// Log the profile ID we're trying to update
-	h.logger.Info().Str("profile_id", id).Msg("Received request to update profile")
-
-	// Get the authenticated user ID from the context
-	userID, ok := auth.GetUserID(r)
-	if !ok {
-		appErr := apperrors.Unauthorized("User ID not found in context", nil)
-		appErr.WriteJSON(w)
+	var input profile.Profile
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, apperrors.InvalidInput("Invalid request payload", err))
 		return
 	}
 
-	// Log the request for debugging
-	h.logger.Debug().Str("profile_id", id).Str("user_id", userID.String()).Msg("Attempting to update profile")
+	userID := r.Context().Value("user_id").(string)
+	input.UserID = userID
 
-	// First, check if the profile exists and belongs to the authenticated user
-	h.logger.Info().Str("profile_id", id).Msg("Checking if profile exists")
-	profile, err := h.profileService.GetProfile(r.Context(), id)
-	if err != nil {
-		// Handle database errors
-		if err.Error() == "sql: no rows in result set" {
-			h.logger.Error().Str("profile_id", id).Msg("Profile not found in database")
-			appErr := apperrors.NotFound("Profile not found", err)
-			appErr.WriteJSON(w)
+	if err := h.validator.Struct(input); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var details []map[string]string
+			for _, err := range validationErrors {
+				details = append(details, map[string]string{
+					"field":   err.Field(),
+					"message": err.Tag(),
+				})
+			}
+			response.Error(w, apperrors.InvalidInputWithDetails("Validation failed", details, err))
 			return
 		}
-
-		h.logger.Error().Err(err).Str("profile_id", id).Msg("Failed to get profile")
-		appErr := apperrors.Internal("Failed to get profile", err)
-		appErr.WriteJSON(w)
+		response.Error(w, apperrors.InvalidInput("Validation failed", err))
 		return
 	}
 
-	h.logger.Info().Str("profile_id", id).Str("user_id", profile.UserID.String()).Msg("Profile found")
-
-	// Verify ownership
-	if profile.UserID.String() != userID.String() {
-		appErr := apperrors.Forbidden("You don't have permission to update this profile", nil)
-		appErr.WriteJSON(w)
-		return
-	}
-
-	// Support multiple request formats
-	var standardReq struct {
-		Age         int      `json:"age"`
-		Gender      string   `json:"gender"`
-		Weight      float64  `json:"weight"`
-		Height      float64  `json:"height"`
-		Goals       []string `json:"goals"`
-		Allergies   []string `json:"allergies"`
-		Preferences []string `json:"preferences"`
-	}
-
-	var expandedReq struct {
-		ID                  string   `json:"id,omitempty"`
-		ProfileName         string   `json:"profile_name,omitempty"`
-		IsDefault           bool     `json:"is_default,omitempty"`
-		HealthConditions    []string `json:"health_conditions,omitempty"`
-		DietaryRestrictions []string `json:"dietary_restrictions,omitempty"`
-		Allergens           []string `json:"allergens,omitempty"`
-		GoalType            string   `json:"goal_type,omitempty"`
-		DislikedFoods       []string `json:"disliked_foods,omitempty"`
-		PreferredFoods      []string `json:"preferred_foods,omitempty"`
-		CuisinePreferences  []string `json:"cuisine_preferences,omitempty"`
-	}
-
-	// Try to decode in different formats
-	var goals []string
-	var allergies []string
-	var preferences []string
-	var isDefault bool
-
-	// Read the request body into a buffer so we can use it multiple times
-	bodyBytes, err := io.ReadAll(r.Body)
+	err := h.profileService.UpdateProfile(r.Context(), userID, input.Age, input.Gender, input.Weight, input.Height, input.Goals, input.Allergies, input.Preferences, input.IsDefault)
 	if err != nil {
-		appErr := apperrors.InvalidInput("Failed to read request body", err)
-		appErr.WriteJSON(w)
+		h.logger.Error().Err(err).Str("user_id", userID).Msg("Failed to update profile")
+		response.Error(w, apperrors.Internal("Failed to update profile", err))
 		return
 	}
 
-	// Try to decode as expanded format first
-	if err := json.Unmarshal(bodyBytes, &expandedReq); err == nil {
-		// Successfully decoded as expanded format
-		h.logger.Debug().Msg("Using expanded request format")
-
-		// Verify the profile ID if provided
-		if expandedReq.ID != "" && expandedReq.ID != id {
-			appErr := apperrors.InvalidInput("Profile ID in URL does not match ID in request body", nil)
-			appErr.WriteJSON(w)
-			return
-		}
-
-		// Extract the fields we need
-		if expandedReq.GoalType != "" {
-			goals = []string{expandedReq.GoalType}
-		}
-		allergies = expandedReq.Allergens
-		preferences = expandedReq.PreferredFoods
-		isDefault = expandedReq.IsDefault
-	} else {
-		// Try to decode as standard format
-		if err := json.Unmarshal(bodyBytes, &standardReq); err != nil {
-			appErr := apperrors.InvalidInput("Invalid request body", err)
-			appErr.WriteJSON(w)
-			return
-		}
-
-		// Extract the fields from standard format
-		goals = standardReq.Goals
-		allergies = standardReq.Allergies
-		preferences = standardReq.Preferences
-		// Check if isDefault was included in the request
-		var standardReqWithDefault struct {
-			IsDefault bool `json:"is_default"`
-		}
-		if err := json.Unmarshal(bodyBytes, &standardReqWithDefault); err == nil {
-			isDefault = standardReqWithDefault.IsDefault
-		}
-	}
-
-	// Log the extracted data for debugging
-	h.logger.Debug().Interface("goals", goals).Interface("allergies", allergies).Interface("preferences", preferences).Bool("is_default", isDefault).Msg("Extracted profile data")
-
-	// Double-check that the profile still exists before updating
-	h.logger.Debug().Str("profile_id", id).Str("user_id", userID.String()).Msg("Updating profile")
-
-	// Update the profile
-	err = h.profileService.UpdateProfile(r.Context(), id, 0, "", 0, 0, goals, allergies, preferences, isDefault)
+	updatedProfile, err := h.profileService.GetProfile(r.Context(), userID)
 	if err != nil {
-		// Handle database errors
-		if err.Error() == "sql: no rows in result set" {
-			h.logger.Error().Str("profile_id", id).Msg("Profile not found during update")
-			appErr := apperrors.NotFound("Profile not found", err)
-			appErr.WriteJSON(w)
-			return
-		}
-
-		h.logger.Error().Err(err).Str("profile_id", id).Msg("Failed to update profile")
-		appErr := apperrors.Internal("Failed to update profile", err)
-		appErr.WriteJSON(w)
+		response.Error(w, apperrors.Internal("Failed to retrieve updated profile", err))
 		return
 	}
 
-	// Return the updated profile
-	updatedProfile, err := h.profileService.GetProfile(r.Context(), id)
-	if err != nil {
-		appErr := apperrors.Internal("Profile updated but failed to retrieve updated data", err)
-		appErr.WriteJSON(w)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedProfile)
+	response.JSON(w, http.StatusOK, updatedProfile)
 }
 
 func (h *ProfileHandler) CheckProfileExists(w http.ResponseWriter, r *http.Request) {

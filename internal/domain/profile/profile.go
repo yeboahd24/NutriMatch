@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -11,6 +12,19 @@ import (
 var (
 	ErrUnauthorized = errors.New("unauthorized access to profile")
 )
+
+// Profile represents a user's profile update request
+type Profile struct {
+	UserID      string   `json:"user_id"`
+	Age         int      `json:"age" validate:"required,gt=0,lt=120"`
+	Gender      string   `json:"gender" validate:"required,oneof=male female other prefer_not_to_say"`
+	Weight      float64  `json:"weight" validate:"required,gt=0"`
+	Height      float64  `json:"height" validate:"required,gt=0"`
+	Goals       []string `json:"goals" validate:"required,min=1,dive,oneof=weight_loss weight_gain maintenance muscle_gain"`
+	Allergies   []string `json:"allergies"`
+	Preferences []string `json:"preferences"`
+	IsDefault   bool     `json:"is_default"`
+}
 
 // UserProfile represents a user's nutritional profile
 type UserProfile struct {
@@ -52,4 +66,10 @@ type Service interface {
 	Update(profile *UserProfile) error
 	SetAsDefault(id uuid.UUID, userID uuid.UUID) error
 	Delete(id uuid.UUID, userID uuid.UUID) error
+	CreateProfile(ctx context.Context, userID string, age int, gender string, weight, height float64, goals, allergies, preferences []string, isDefault bool) (*UserProfile, error)
+	GetProfile(ctx context.Context, id string) (*UserProfile, error)
+	GetProfilesByUserID(ctx context.Context, userID string) ([]UserProfile, error)
+	UpdateProfile(ctx context.Context, id string, age int, gender string, weight, height float64, goals, allergies, preferences []string, isDefault bool) error
+	DeleteProfile(ctx context.Context, id string) error
+	GetAllProfiles(ctx context.Context) ([]*UserProfile, error)
 }

@@ -54,3 +54,63 @@ SELECT COUNT(*) FROM foods;
 -- name: DeleteFood :exec
 DELETE FROM foods
 WHERE id = $1;
+
+-- name: CreateFoodRating :one
+INSERT INTO food_ratings (
+    user_id,
+    food_id,
+    rating,
+    comments
+) VALUES (
+    $1, $2, $3, $4
+)
+RETURNING *;
+
+-- name: UpdateFoodRating :one
+UPDATE food_ratings
+SET
+    rating = $3,
+    comments = $4,
+    updated_at = NOW()
+WHERE user_id = $1 AND food_id = $2
+RETURNING *;
+
+-- name: GetFoodRating :one
+SELECT * FROM food_ratings
+WHERE user_id = $1 AND food_id = $2
+LIMIT 1;
+
+-- name: ListUserRatings :many
+SELECT * FROM food_ratings
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: DeleteFoodRating :exec
+DELETE FROM food_ratings
+WHERE user_id = $1 AND food_id = $2;
+
+-- name: SaveFood :one
+INSERT INTO user_saved_foods (
+    user_id,
+    food_id,
+    list_type
+) VALUES (
+    $1, $2, $3
+)
+RETURNING *;
+
+-- name: GetSavedFood :one
+SELECT * FROM user_saved_foods
+WHERE user_id = $1 AND food_id = $2 AND list_type = $3
+LIMIT 1;
+
+-- name: ListSavedFoods :many
+SELECT * FROM user_saved_foods
+WHERE user_id = $1 AND list_type = $2
+ORDER BY created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: DeleteSavedFood :exec
+DELETE FROM user_saved_foods
+WHERE user_id = $1 AND food_id = $2 AND list_type = $3;

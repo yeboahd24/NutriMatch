@@ -9,6 +9,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
 )
 
@@ -97,6 +98,45 @@ func (q *Queries) CreateFood(ctx context.Context, arg CreateFoodParams) (Food, e
 	return i, err
 }
 
+const createFoodRating = `-- name: CreateFoodRating :one
+INSERT INTO food_ratings (
+    user_id,
+    food_id,
+    rating,
+    comments
+) VALUES (
+    $1, $2, $3, $4
+)
+RETURNING id, user_id, food_id, rating, comments, created_at, updated_at
+`
+
+type CreateFoodRatingParams struct {
+	UserID   uuid.UUID      `json:"user_id"`
+	FoodID   string         `json:"food_id"`
+	Rating   int16          `json:"rating"`
+	Comments sql.NullString `json:"comments"`
+}
+
+func (q *Queries) CreateFoodRating(ctx context.Context, arg CreateFoodRatingParams) (FoodRating, error) {
+	row := q.queryRow(ctx, q.createFoodRatingStmt, createFoodRating,
+		arg.UserID,
+		arg.FoodID,
+		arg.Rating,
+		arg.Comments,
+	)
+	var i FoodRating
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FoodID,
+		&i.Rating,
+		&i.Comments,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const deleteFood = `-- name: DeleteFood :exec
 DELETE FROM foods
 WHERE id = $1
@@ -104,6 +144,37 @@ WHERE id = $1
 
 func (q *Queries) DeleteFood(ctx context.Context, id string) error {
 	_, err := q.exec(ctx, q.deleteFoodStmt, deleteFood, id)
+	return err
+}
+
+const deleteFoodRating = `-- name: DeleteFoodRating :exec
+DELETE FROM food_ratings
+WHERE user_id = $1 AND food_id = $2
+`
+
+type DeleteFoodRatingParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	FoodID string    `json:"food_id"`
+}
+
+func (q *Queries) DeleteFoodRating(ctx context.Context, arg DeleteFoodRatingParams) error {
+	_, err := q.exec(ctx, q.deleteFoodRatingStmt, deleteFoodRating, arg.UserID, arg.FoodID)
+	return err
+}
+
+const deleteSavedFood = `-- name: DeleteSavedFood :exec
+DELETE FROM user_saved_foods
+WHERE user_id = $1 AND food_id = $2 AND list_type = $3
+`
+
+type DeleteSavedFoodParams struct {
+	UserID   uuid.UUID `json:"user_id"`
+	FoodID   string    `json:"food_id"`
+	ListType string    `json:"list_type"`
+}
+
+func (q *Queries) DeleteSavedFood(ctx context.Context, arg DeleteSavedFoodParams) error {
+	_, err := q.exec(ctx, q.deleteSavedFoodStmt, deleteSavedFood, arg.UserID, arg.FoodID, arg.ListType)
 	return err
 }
 
@@ -159,6 +230,57 @@ func (q *Queries) GetFoodByID(ctx context.Context, id string) (Food, error) {
 		&i.IngredientAnalysis,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getFoodRating = `-- name: GetFoodRating :one
+SELECT id, user_id, food_id, rating, comments, created_at, updated_at FROM food_ratings
+WHERE user_id = $1 AND food_id = $2
+LIMIT 1
+`
+
+type GetFoodRatingParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	FoodID string    `json:"food_id"`
+}
+
+func (q *Queries) GetFoodRating(ctx context.Context, arg GetFoodRatingParams) (FoodRating, error) {
+	row := q.queryRow(ctx, q.getFoodRatingStmt, getFoodRating, arg.UserID, arg.FoodID)
+	var i FoodRating
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FoodID,
+		&i.Rating,
+		&i.Comments,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getSavedFood = `-- name: GetSavedFood :one
+SELECT id, user_id, food_id, list_type, created_at FROM user_saved_foods
+WHERE user_id = $1 AND food_id = $2 AND list_type = $3
+LIMIT 1
+`
+
+type GetSavedFoodParams struct {
+	UserID   uuid.UUID `json:"user_id"`
+	FoodID   string    `json:"food_id"`
+	ListType string    `json:"list_type"`
+}
+
+func (q *Queries) GetSavedFood(ctx context.Context, arg GetSavedFoodParams) (UserSavedFood, error) {
+	row := q.queryRow(ctx, q.getSavedFoodStmt, getSavedFood, arg.UserID, arg.FoodID, arg.ListType)
+	var i UserSavedFood
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FoodID,
+		&i.ListType,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -265,6 +387,128 @@ func (q *Queries) ListFoodsByType(ctx context.Context, arg ListFoodsByTypeParams
 	return items, nil
 }
 
+const listSavedFoods = `-- name: ListSavedFoods :many
+SELECT id, user_id, food_id, list_type, created_at FROM user_saved_foods
+WHERE user_id = $1 AND list_type = $2
+ORDER BY created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListSavedFoodsParams struct {
+	UserID   uuid.UUID `json:"user_id"`
+	ListType string    `json:"list_type"`
+	Limit    int32     `json:"limit"`
+	Offset   int32     `json:"offset"`
+}
+
+func (q *Queries) ListSavedFoods(ctx context.Context, arg ListSavedFoodsParams) ([]UserSavedFood, error) {
+	rows, err := q.query(ctx, q.listSavedFoodsStmt, listSavedFoods,
+		arg.UserID,
+		arg.ListType,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserSavedFood{}
+	for rows.Next() {
+		var i UserSavedFood
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.FoodID,
+			&i.ListType,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserRatings = `-- name: ListUserRatings :many
+SELECT id, user_id, food_id, rating, comments, created_at, updated_at FROM food_ratings
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListUserRatingsParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Limit  int32     `json:"limit"`
+	Offset int32     `json:"offset"`
+}
+
+func (q *Queries) ListUserRatings(ctx context.Context, arg ListUserRatingsParams) ([]FoodRating, error) {
+	rows, err := q.query(ctx, q.listUserRatingsStmt, listUserRatings, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FoodRating{}
+	for rows.Next() {
+		var i FoodRating
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.FoodID,
+			&i.Rating,
+			&i.Comments,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const saveFood = `-- name: SaveFood :one
+INSERT INTO user_saved_foods (
+    user_id,
+    food_id,
+    list_type
+) VALUES (
+    $1, $2, $3
+)
+RETURNING id, user_id, food_id, list_type, created_at
+`
+
+type SaveFoodParams struct {
+	UserID   uuid.UUID `json:"user_id"`
+	FoodID   string    `json:"food_id"`
+	ListType string    `json:"list_type"`
+}
+
+func (q *Queries) SaveFood(ctx context.Context, arg SaveFoodParams) (UserSavedFood, error) {
+	row := q.queryRow(ctx, q.saveFoodStmt, saveFood, arg.UserID, arg.FoodID, arg.ListType)
+	var i UserSavedFood
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FoodID,
+		&i.ListType,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const searchFoodsByName = `-- name: SearchFoodsByName :many
 SELECT id, name, alternate_names, description, food_type, source, serving, nutrition_100g, ean_13, labels, package_size, ingredients, ingredient_analysis, created_at, updated_at FROM foods
 WHERE name ILIKE '%' || $1 || '%'
@@ -320,4 +564,41 @@ func (q *Queries) SearchFoodsByName(ctx context.Context, arg SearchFoodsByNamePa
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateFoodRating = `-- name: UpdateFoodRating :one
+UPDATE food_ratings
+SET
+    rating = $3,
+    comments = $4,
+    updated_at = NOW()
+WHERE user_id = $1 AND food_id = $2
+RETURNING id, user_id, food_id, rating, comments, created_at, updated_at
+`
+
+type UpdateFoodRatingParams struct {
+	UserID   uuid.UUID      `json:"user_id"`
+	FoodID   string         `json:"food_id"`
+	Rating   int16          `json:"rating"`
+	Comments sql.NullString `json:"comments"`
+}
+
+func (q *Queries) UpdateFoodRating(ctx context.Context, arg UpdateFoodRatingParams) (FoodRating, error) {
+	row := q.queryRow(ctx, q.updateFoodRatingStmt, updateFoodRating,
+		arg.UserID,
+		arg.FoodID,
+		arg.Rating,
+		arg.Comments,
+	)
+	var i FoodRating
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FoodID,
+		&i.Rating,
+		&i.Comments,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

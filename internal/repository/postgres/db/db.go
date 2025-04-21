@@ -96,11 +96,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserProfilesStmt, err = db.PrepareContext(ctx, getUserProfiles); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserProfiles: %w", err)
 	}
+	if q.listAllergensStmt, err = db.PrepareContext(ctx, listAllergens); err != nil {
+		return nil, fmt.Errorf("error preparing query ListAllergens: %w", err)
+	}
 	if q.listFoodsStmt, err = db.PrepareContext(ctx, listFoods); err != nil {
 		return nil, fmt.Errorf("error preparing query ListFoods: %w", err)
 	}
 	if q.listFoodsByTypeStmt, err = db.PrepareContext(ctx, listFoodsByType); err != nil {
 		return nil, fmt.Errorf("error preparing query ListFoodsByType: %w", err)
+	}
+	if q.listHealthConditionsStmt, err = db.PrepareContext(ctx, listHealthConditions); err != nil {
+		return nil, fmt.Errorf("error preparing query ListHealthConditions: %w", err)
 	}
 	if q.listSavedFoodsStmt, err = db.PrepareContext(ctx, listSavedFoods); err != nil {
 		return nil, fmt.Errorf("error preparing query ListSavedFoods: %w", err)
@@ -266,6 +272,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getUserProfilesStmt: %w", cerr)
 		}
 	}
+	if q.listAllergensStmt != nil {
+		if cerr := q.listAllergensStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listAllergensStmt: %w", cerr)
+		}
+	}
 	if q.listFoodsStmt != nil {
 		if cerr := q.listFoodsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listFoodsStmt: %w", cerr)
@@ -274,6 +285,11 @@ func (q *Queries) Close() error {
 	if q.listFoodsByTypeStmt != nil {
 		if cerr := q.listFoodsByTypeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listFoodsByTypeStmt: %w", cerr)
+		}
+	}
+	if q.listHealthConditionsStmt != nil {
+		if cerr := q.listHealthConditionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listHealthConditionsStmt: %w", cerr)
 		}
 	}
 	if q.listSavedFoodsStmt != nil {
@@ -404,8 +420,10 @@ type Queries struct {
 	getUserByIDStmt                 *sql.Stmt
 	getUserProfileByIDStmt          *sql.Stmt
 	getUserProfilesStmt             *sql.Stmt
+	listAllergensStmt               *sql.Stmt
 	listFoodsStmt                   *sql.Stmt
 	listFoodsByTypeStmt             *sql.Stmt
+	listHealthConditionsStmt        *sql.Stmt
 	listSavedFoodsStmt              *sql.Stmt
 	listUserRatingsStmt             *sql.Stmt
 	revokeAllUserRefreshTokensStmt  *sql.Stmt
@@ -449,8 +467,10 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserByIDStmt:                 q.getUserByIDStmt,
 		getUserProfileByIDStmt:          q.getUserProfileByIDStmt,
 		getUserProfilesStmt:             q.getUserProfilesStmt,
+		listAllergensStmt:               q.listAllergensStmt,
 		listFoodsStmt:                   q.listFoodsStmt,
 		listFoodsByTypeStmt:             q.listFoodsByTypeStmt,
+		listHealthConditionsStmt:        q.listHealthConditionsStmt,
 		listSavedFoodsStmt:              q.listSavedFoodsStmt,
 		listUserRatingsStmt:             q.listUserRatingsStmt,
 		revokeAllUserRefreshTokensStmt:  q.revokeAllUserRefreshTokensStmt,
@@ -465,9 +485,4 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updateUserPasswordStmt:          q.updateUserPasswordStmt,
 		updateUserProfileStmt:           q.updateUserProfileStmt,
 	}
-}
-
-// GetDB returns the underlying database connection
-func (q *Queries) GetDB() DBTX {
-	return q.db
 }

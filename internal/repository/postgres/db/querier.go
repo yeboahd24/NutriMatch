@@ -36,8 +36,10 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserProfileByID(ctx context.Context, id uuid.UUID) (UserProfile, error)
 	GetUserProfiles(ctx context.Context, userID uuid.UUID) ([]UserProfile, error)
+	ListAllergens(ctx context.Context) ([]Allergen, error)
 	ListFoods(ctx context.Context, arg ListFoodsParams) ([]Food, error)
 	ListFoodsByType(ctx context.Context, arg ListFoodsByTypeParams) ([]Food, error)
+	ListHealthConditions(ctx context.Context) ([]HealthCondition, error)
 	ListSavedFoods(ctx context.Context, arg ListSavedFoodsParams) ([]UserSavedFood, error)
 	ListUserRatings(ctx context.Context, arg ListUserRatingsParams) ([]FoodRating, error)
 	RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
